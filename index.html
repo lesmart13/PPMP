@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>People's Power Movement Party</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0px); }
+    }
+    .float-animation {
+      animation: float 6s ease-in-out infinite;
+    }
+    .bg-blur {
+      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .tech-people-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 70%;
+      z-index: -1;
+    }
+    .gradient-background {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      z-index: -2;
+      background: linear-gradient(45deg, #4f46e5, #10b981, #ec4899, #eab308);
+      background-size: 400%;
+      animation: gradientShift 15s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .form-container {
+      position: relative;
+      padding: 2px;
+    }
+    .progress-border {
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: transparent;
+      z-index: -1;
+    }
+    .progress-border::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 2px solid transparent;
+      border-image: linear-gradient(to right, #00ffcc, #00ffcc) 1;
+      border-image-slice: 1;
+      clip-path: polygon(0 0, var(--progress-width) 0, var(--progress-width) 100%, 0 100%);
+      transition: --progress-width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Dummy Smart Contract ABI (simplified for demo)
+    const contractABI = [
+      {
+        "inputs": [
+          { "name": "username", "type": "string" },
+          { "name": "email", "type": "string" },
+          { "name": "phone", "type": "string" },
+          { "name": "passwordHash", "type": "string" }
+        ],
+        "name": "registerUser",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    // Dummy contract address (replace with actual deployed contract address)
+    const contractAddress = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
+
+    const App = () => {
+      const [modalOpen, setModalOpen] = useState(false);
+      const [formType, setFormType] = useState('signin');
+      const [web3, setWeb3] = useState(null);
+      const [contract, setContract] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [imagePreview, setImagePreview] = useState(null);
+      const [formData, setFormData] = useState({
+        signin: { email: '', password: '' },
+        register: { username: '', email: '', phone: '', password: '', image: '' },
+        forgot: { email: '' }
+      });
+
+      // Initialize Web3 and contract
+      useEffect(() => {
+        const initWeb3 = async () => {
+          if (window.ethereum) {
+            const web3Instance = new Web3(window.ethereum);
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const accounts = await web3Instance.eth.getAccounts();
+            setWeb3(web3Instance);
+            setAccount(accounts[0]);
+            const contractInstance = new web3Instance.eth.Contract(contractABI, contractAddress);
+            setContract(contractInstance);
+          }
+        };
+        initWeb3();
+      }, []);
+
+      // Tech and people power animation (top 70%)
+      useEffect(() => {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'tech-people-canvas';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight * 0.7;
+
+        const particles = [];
+        for (let i = 0; i < 100; i++) {
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 3 + 1,
+            vx: Math.random() * 1.5 - 0.75,
+            vy: Math.random() * 1.5 - 0.75,
+            type: Math.random() < 0.4 ? 'node' : Math.random() < 0.7 ? 'circuit' : 'crowd',
+            opacity: Math.random() * 0.5 + 0.3
+          });
+        }
+
+        const drawCrowd = (x, y, opacity) => {
+          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx.beginPath();
+          ctx.arc(x, y, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(x - 3, y + 5, 6, 10);
+          ctx.fillRect(x - 8, y + 5, 4, 6);
+          ctx.fillRect(x + 4, y + 5, 4, 6);
+        };
+
+        const drawCircuit = (x, y, opacity) => {
+          ctx.strokeStyle = `rgba(100, 200, 255, ${opacity})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.random() * 20 - 10, y + Math.random() * 20 - 10);
+          ctx.stroke();
+        };
+
+        const drawNode = (x, y, radius, opacity) => {
+          ctx.fillStyle = `rgba(0, 255, 200, ${opacity})`;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        };
+
+        const animate = () => {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+            if (p.type === 'node') {
+              drawNode(p.x, p.y, p.radius, p.opacity);
+            } else if (p.type === 'circuit') {
+              drawCircuit(p.x, p.y, p.opacity);
+            } else {
+              drawCrowd(p.x, p.y, p.opacity);
+            }
+          });
+          requestAnimationFrame(animate);
+        };
+        animate();
+
+        return () => document.body.removeChild(canvas);
+      }, []);
+
+      // Handle form input changes
+      const handleInputChange = (e, formType, field) => {
+        setFormData(prev => ({
+          ...prev,
+          [formType]: {
+            ...prev[formType],
+            [field]: e.target.value
+          }
+        }));
+      };
+
+      // Handle image upload
+      const handleImageUpload = (e) => {
+        const file = e.target.files[0] || (e.dataTransfer && e.dataTransfer.files[0]);
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            setImagePreview(reader.result);
+            setFormData(prev => ({
+              ...prev,
+              register: { ...prev.register, image: reader.result }
+            }));
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      // Handle drag and drop
+      const handleDragOver = (e) => {
+        e.preventDefault();
+      };
+
+      // Check if form is valid
+      const isFormValid = (formType) => {
+        if (formType === 'signin') {
+          return formData.signin.email.trim() && formData.signin.password.trim();
+        } else if (formType === 'register') {
+          return (
+            formData.register.username.trim() &&
+            formData.register.email.trim() &&
+            formData.register.phone.trim() &&
+            formData.register.password.trim() &&
+            formData.register.image
+          );
+        } else if (formType === 'forgot') {
+          return formData.forgot.email.trim();
+        }
+        return false;
+      };
+
+      // Calculate progress for form border
+      const getProgressWidth = (formType) => {
+        if (formType === 'signin') {
+          const fields = ['email', 'password'];
+          const filledFields = fields.filter(field => formData.signin[field]).length;
+          return (filledFields / fields.length) * 100 + '%';
+        } else if (formType === 'register') {
+          const fields = ['email', 'phone', 'username', 'password', 'image'];
+          const filledFields = fields.filter(field => formData.register[field]).length;
+          return (filledFields / fields.length) * 100 + '%';
+        } else if (formType === 'forgot') {
+          const fields = ['email'];
+          const filledFields = fields.filter(field => formData.forgot[field]).length;
+          return (filledFields / fields.length) * 100 + '%';
+        }
+        return '0%';
+      };
+
+      // Handle form submission
+      const handleRegister = async (e) => {
+        e.preventDefault();
+        if (!isFormValid('register')) return;
+        const { username, email, phone, password } = formData.register;
+        const passwordHash = web3.utils.sha3(password);
+
+        if (contract && account) {
+          await contract.methods.registerUser(username, email, phone, passwordHash)
+            .send({ from: account });
+          alert('User registered on blockchain!');
+          setModalOpen(false);
+          setFormData(prev => ({
+            ...prev,
+            register: { username: '', email: '', phone: '', password: '', image: '' }
+          }));
+          setImagePreview(null);
+        }
+      };
+
+      const handleSignIn = (e) => {
+        e.preventDefault();
+        if (!isFormValid('signin')) return;
+        alert('Sign in functionality to be implemented');
+        setFormData(prev => ({
+          ...prev,
+          signin: { email: '', password: '' }
+        }));
+      };
+
+      const handleForgotPassword = (e) => {
+        e.preventDefault();
+        if (!isFormValid('forgot')) return;
+        alert('Password reset functionality to be implemented');
+        setFormData(prev => ({
+          ...prev,
+          forgot: { email: '' }
+        }));
+      };
+
+      return (
+        <div className="min-h-screen text-white relative">
+          {/* Gradient Background */}
+          <div className="gradient-background"></div>
+
+          {/* Header */}
+          <header className="flex justify-between items-center p-6">
+            <img
+              src="https://via.placeholder.com/150x50?text=PPMP+Logo"
+              alt="People's Power Movement Party Logo"
+              className="h-12"
+            />
+            <button
+              onClick={() => setModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Sign In
+            </button>
+          </header>
+
+          {/* Main Content */}
+          <main className="container mx-auto px-6 py-12 text-center">
+            <h1 className="text-5xl font-bold mb-6 float-animation">
+              Welcome to People's Power Movement Party
+            </h1>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">
+              Join our movement to empower communities and drive change through transparent, blockchain-based voting systems.
+            </p>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg"
+            >
+              Get Started
+            </button>
+
+            {/* Dummy Data Showcase */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <h3 className="text-2xl font-bold mb-4">Transparent Voting</h3>
+                <p>Our blockchain-based system ensures every vote is secure and verifiable.</p>
+              </div>
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <h3 className="text-2xl font-bold mb-4">Community Driven</h3>
+                <p>Engage with local initiatives and make your voice heard.</p>
+              </div>
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <h3 className="text-2xl font-bold mb-4">Global Impact</h3>
+                <p>Join a worldwide movement for democratic change.</p>
+              </div>
+            </div>
+          </main>
+
+          {/* Modal */}
+          {modalOpen && (
+            <div className="fixed inset-0 bg-blur flex items-center justify-center z-50">
+              <div className="form-container bg-gray-900 p-8 rounded-lg w-full max-w-md">
+                {formType === 'signin' && (
+                  <form onSubmit={handleSignIn}>
+                    <div className="progress-border" style={{ '--progress-width': getProgressWidth('signin') }}></div>
+                    <h2 className="text-2xl font-bold mb-6">Sign In</h2>
+                    <div className="mb-4">
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.signin.email}
+                        onChange={(e) => handleInputChange(e, 'signin', 'email')}
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.signin.password}
+                        onChange={(e) => handleInputChange(e, 'signin', 'password')}
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className={`w-full font-bold py-2 rounded text-white ${
+                        isFormValid('signin')
+                          ? 'bg-blue-600 hover:bg-blue-700'
+                          : 'bg-gray-600 cursor-not-allowed'
+                      }`}
+                      disabled={!isFormValid('signin')}
+                    >
+                      Sign In
+                    </button>
+                    <div className="flex justify-between mt-4 text-sm">
+                      <a
+                        href="#"
+                        onClick={() => setFormType('register')}
+                        className="text-blue-400 hover:underline"
+                      >
+                        Register an Account
+                      </a>
+                      <a
+                        href="#"
+                        onClick={() => setFormType('forgot')}
+                        className="text-blue-400 hover:underline"
+                      >
+                        Forgot Password?
+                      </a>
+                    </div>
+                  </form>
+                )}
+
+                {formType === 'register' && (
+                  <form onSubmit={handleRegister}>
+                    <div className="progress-border" style={{ '--progress-width': getProgressWidth('register') }}></div>
+                    <h2 className="text-2xl font-bold mb-6">Create Account</h2>
+                    <div className="mb-4">
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.register.email}
+                        onChange={(e) => handleInputChange(e, 'register', 'email')}
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="Phone Number"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.register.phone}
+                        onChange={(e) => handleInputChange(e, 'register', 'phone')}
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        name="username"
+                        placeholder="Username"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.register.username}
+                        onChange={(e) => handleInputChange(e, 'register', 'username')}
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.register.password}
+                        onChange={(e) => handleInputChange(e, 'register', 'password')}
+                        required
+                      />
+                    </div>
+                    <div
+                      className="mb-4 border-2 border-dashed p-4 text-center"
+                      onDragOver={handleDragOver}
+                      onDrop={handleImageUpload}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="imageUpload"
+                      />
+                      <label htmlFor="imageUpload" className="cursor-pointer">
+                        Drag & Drop or Click to Upload Image
+                      </label>
+                      {imagePreview && (
+                        <img src={imagePreview} alt="Preview" className="mt-4 max-w-full h-32 object-cover" />
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className={`w-full font-bold py-2 rounded text-white ${
+                        isFormValid('register')
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : 'bg-gray-600 cursor-not-allowed'
+                      }`}
+                      disabled={!isFormValid('register')}
+                    >
+                      Register
+                    </button>
+                    <div className="flex justify-between mt-4 text-sm">
+                      <a
+                        href="#"
+                        onClick={() => setFormType('signin')}
+                        className="text-blue-400 hover:underline"
+                      >
+                        Back to Sign In
+                      </a>
+                    </div>
+                  </form>
+                )}
+
+                {formType === 'forgot' && (
+                  <form onSubmit={handleForgotPassword}>
+                    <div className="progress-border" style={{ '--progress-width': getProgressWidth('forgot') }}></div>
+                    <h2 className="text-2xl font-bold mb-6">Forgot Password</h2>
+                    <div className="mb-4">
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        className="w-full p-2 rounded bg-gray-800 text-white"
+                        value={formData.forgot.email}
+                        onChange={(e) => handleInputChange(e, 'forgot', 'email')}
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className={`w-full font-bold py-2 rounded text-white ${
+                        isFormValid('forgot')
+                          ? 'bg-blue-600 hover:bg-blue-700'
+                          : 'bg-gray-600 cursor-not-allowed'
+                      }`}
+                      disabled={!isFormValid('forgot')}
+                    >
+                      Reset Password
+                    </button>
+                    <div className="flex justify-between mt-4 text-sm">
+                      <a
+                        href="#"
+                        onClick={() => setFormType('signin')}
+                        className="text-blue-400 hover:underline"
+                      >
+                        Back to Sign In
+                      </a>
+                    </div>
+                  </form>
+                )}
+
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="mt-4 text-gray-400 hover:text-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
